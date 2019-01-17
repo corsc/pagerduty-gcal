@@ -39,7 +39,16 @@ func (c *CalendarAPI) GetCalendars(credentialsFile, tokenFile string, users map[
 	out := map[string]*Calendar{}
 
 	for id, email := range users {
-		calendar, err := c.getCalendar(api, email, start, end)
+		calendar := &Calendar{}
+
+		// check for "Out of Office" events
+		err = c.getCalendar(api, calendar, "out", email, start, end)
+		if err != nil {
+			return nil, err
+		}
+
+		// check for "No On-Call" events
+		err = c.getCalendar(api, calendar, "xoncall", email, start, end)
 		if err != nil {
 			return nil, err
 		}
@@ -52,7 +61,7 @@ func (c *CalendarAPI) GetCalendars(credentialsFile, tokenFile string, users map[
 
 // will return the calendar for the supplied email address
 // (taken from API example)
-func (c *CalendarAPI) getCalendar(api *calendar.Service, email string, start time.Time, end time.Time) (*Calendar, error) {
+func (c *CalendarAPI) getCalendar(api *calendar.Service, out *Calendar, searchTerm string, email string, start time.Time, end time.Time) (error) {
 	events, err := api.Events.List(email).
 		AlwaysIncludeEmail(false).
 		ShowDeleted(false).
@@ -61,18 +70,16 @@ func (c *CalendarAPI) getCalendar(api *calendar.Service, email string, start tim
 		TimeMax(end.Format(time.RFC3339)).
 		MaxResults(100).
 		TimeZone("UTC").
-		Q("out").
+		Q(searchTerm).
 		Do()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(events.Items) == 0 {
-		return &Calendar{}, nil
+		return nil
 	}
-
-	out := &Calendar{}
 
 	for _, item := range events.Items {
 		start := item.Start.DateTime
@@ -87,18 +94,18 @@ func (c *CalendarAPI) getCalendar(api *calendar.Service, email string, start tim
 
 		startTime, err := time.Parse(time.RFC3339, start)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		endTime, err := time.Parse(time.RFC3339, end)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		out.Items = append(out.Items, &CalendarItem{Start: startTime, End: endTime})
 	}
 
-	return out, nil
+	return nil
 }
 
 func (c *CalendarAPI) getAPI(credsFile, tokFile string) (*calendar.Service, error) {

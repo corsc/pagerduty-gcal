@@ -52,4 +52,5 @@ They currently do not modify anything but this means you will need to configure 
 
 * This app assumes that the email settings for users in PagerDuty match the emails in Google Calendar
 * This app assumes that users add an "Out of Office" event to their Google Calendar (calendar event must be public and contain the word `out`; these are defaults when using the "Out of Office" feature via Google Calendar UI) 
+* This app also supports exclusions from scheduling.  Users must add a public calendar event with the title "xoncall" to their Google Calendar 
 * The period this app works on is determined by the `-start` flag plus 30 days
