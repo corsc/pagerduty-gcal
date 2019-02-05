@@ -62,14 +62,25 @@ func (c *CalendarAPI) GetCalendars(credentialsFile, tokenFile string, users map[
 // will return the calendar for the supplied email address
 // (taken from API example)
 func (c *CalendarAPI) getCalendar(api *calendar.Service, out *Calendar, searchTerm string, email string, start time.Time, end time.Time) error {
+	settings, err := api.Settings.Get("timezone").Do()
+	if err != nil {
+		return err
+	}
+
+	userTimezone := settings.Value
+	location, err := time.LoadLocation(userTimezone)
+	if err != nil {
+		return err
+	}
+
 	events, err := api.Events.List(email).
 		AlwaysIncludeEmail(false).
 		ShowDeleted(false).
 		SingleEvents(true).
-		TimeMin(start.Format(time.RFC3339)).
-		TimeMax(end.Format(time.RFC3339)).
+		// Expand the search to ensure we get everything
+		TimeMin(start.AddDate(0, 0, -1).Format(time.RFC3339)).
+		TimeMax(end.AddDate(0, 0, 1).Format(time.RFC3339)).
 		MaxResults(100).
-		TimeZone("UTC").
 		Q(searchTerm).
 		Do()
 
@@ -82,22 +93,12 @@ func (c *CalendarAPI) getCalendar(api *calendar.Service, out *Calendar, searchTe
 	}
 
 	for _, item := range events.Items {
-		start := item.Start.DateTime
-		if start == "" {
-			start = item.Start.Date + "T00:00:00Z"
-		}
-
-		end := item.End.DateTime
-		if end == "" {
-			end = item.End.Date + "T00:00:00Z"
-		}
-
-		startTime, err := time.Parse(time.RFC3339, start)
+		startTime, err := c.getTime(item.Start.DateTime, item.Start.Date, location)
 		if err != nil {
 			return err
 		}
 
-		endTime, err := time.Parse(time.RFC3339, end)
+		endTime, err := c.getTime(item.End.DateTime, item.End.Date, location)
 		if err != nil {
 			return err
 		}
@@ -106,6 +107,24 @@ func (c *CalendarAPI) getCalendar(api *calendar.Service, out *Calendar, searchTe
 	}
 
 	return nil
+}
+
+func (x *CalendarAPI) getTime(dateTime string, date string, location *time.Location) (time.Time, error) {
+	if dateTime != "" {
+		out, err := time.ParseInLocation(time.RFC3339, dateTime, location)
+		if err != nil {
+			return time.Time{}, err
+		}
+
+		return out, nil
+	}
+
+	out, err := time.ParseInLocation("2006-01-02", date, location)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return out, nil
 }
 
 func (c *CalendarAPI) getAPI(credsFile, tokFile string) (*calendar.Service, error) {
@@ -140,7 +159,7 @@ func getClient(tokFile string, config *oauth2.Config) *http.Client {
 // Request a token from the web, then returns the retrieved token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	fmt.Printf("Go to the following link in your browser then type the "+
+	fmt.Fprintf(os.Stderr, "Go to the following link in your browser then type the "+
 		"authorization code: \n%v\n", authURL)
 
 	var authCode string

@@ -2,6 +2,7 @@ package pduty
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -14,7 +15,7 @@ func (u *UserAPI) GetUsers(apiKey string, entries []*ScheduleEntry) (map[string]
 	out := map[string]string{}
 
 	for _, entry := range entries {
-		result, err := u.getUserEmail(apiKey, entry.User.ID)
+		result, err := u.getUserEmail(apiKey, entry.User)
 		if err != nil {
 			return nil, err
 		}
@@ -25,8 +26,8 @@ func (u *UserAPI) GetUsers(apiKey string, entries []*ScheduleEntry) (map[string]
 	return out, nil
 }
 
-func (u *UserAPI) getUserEmail(apiKey string, userID string) (string, error) {
-	req, err := u.buildRequest(apiKey, userID)
+func (u *UserAPI) getUserEmail(apiKey string, user *User) (string, error) {
+	req, err := u.buildRequest(apiKey, user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -46,6 +47,10 @@ func (u *UserAPI) getUserEmail(apiKey string, userID string) (string, error) {
 	err = decoder.Decode(apiResp)
 	if err != nil {
 		return "", err
+	}
+
+	if apiResp.UserOuter == nil {
+		return "", fmt.Errorf("WARNING: failed to load user '%s' from PD", user.Name)
 	}
 
 	return apiResp.UserOuter.Email, nil

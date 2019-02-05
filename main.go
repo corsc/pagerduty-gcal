@@ -38,6 +38,11 @@ func main() {
 		panic("failed to parse start with err: %s" + err.Error())
 	}
 
+	now := time.Now()
+	if start.Before(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)) {
+		panic("sorry you cannot re-write the past")
+	}
+
 	end := start.Add(time.Duration(days) * 24 * time.Hour)
 	credentialsFile := "credentials.json"
 	tokenFile := "token.json"
