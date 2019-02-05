@@ -61,7 +61,7 @@ func (c *CalendarAPI) GetCalendars(credentialsFile, tokenFile string, users map[
 
 // will return the calendar for the supplied email address
 // (taken from API example)
-func (c *CalendarAPI) getCalendar(api *calendar.Service, out *Calendar, searchTerm string, email string, start time.Time, end time.Time) (error) {
+func (c *CalendarAPI) getCalendar(api *calendar.Service, out *Calendar, searchTerm string, email string, start time.Time, end time.Time) error {
 	events, err := api.Events.List(email).
 		AlwaysIncludeEmail(false).
 		ShowDeleted(false).

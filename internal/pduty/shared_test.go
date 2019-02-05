@@ -13,4 +13,3 @@ func getTestVarFromEnv(t *testing.T, envVar string) string {
 
 	return out
 }
-

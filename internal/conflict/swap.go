@@ -19,8 +19,9 @@ func (s *SwapAPI) FindSwap(schedule *pduty.Schedule, conflict *pduty.ScheduleEnt
 	}
 
 	for _, potentialSwap := range schedule.Entries {
-		if potentialSwap.Start.Equal(conflict.Start) && potentialSwap.End.Equal(conflict.End) {
-			// cant swap with yourself
+		if potentialSwap.Start.Equal(conflict.Start) && potentialSwap.End.Equal(conflict.End) ||
+			potentialSwap.User.ID == conflict.User.ID {
+			// cant swap with the same slot or same user
 			continue
 		}
 

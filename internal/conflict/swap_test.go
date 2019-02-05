@@ -18,7 +18,7 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 		expected    *pduty.ScheduleEntry
 	}{
 		{
-			desc: "no swap",
+			desc: "swap available",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
 					{
@@ -45,6 +45,7 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 				End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
 			},
 			inCalendars: map[string]*gcal.Calendar{
+				"FOO": {},
 				"BAR": {},
 			},
 			expected: &pduty.ScheduleEntry{
@@ -54,6 +55,100 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 				Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
 				End:   time.Date(2019, 01, 03, 8, 0, 0, 0, time.UTC),
 			},
+		},
+		{
+			desc: "no swaps possible",
+			inSchedule: &pduty.Schedule{
+				Entries: []*pduty.ScheduleEntry{
+					{
+						User: &pduty.User{
+							ID: "A",
+						},
+						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+					},
+					{
+						User: &pduty.User{
+							ID: "B",
+						},
+						Start: time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 02, 16, 0, 0, 0, time.UTC),
+					},
+					{
+						User: &pduty.User{
+							ID: "C",
+						},
+						Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 03, 8, 0, 0, 0, time.UTC),
+					},
+				},
+			},
+			inConflict: &pduty.ScheduleEntry{
+				User: &pduty.User{
+					ID: "A",
+				},
+				Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+			},
+			inCalendars: map[string]*gcal.Calendar{
+				"A": {
+					Items: []*gcal.CalendarItem{
+						{
+							Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+							End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+						},
+					},
+				},
+				"B": {
+					Items: []*gcal.CalendarItem{
+						{
+							Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+							End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+						},
+					},
+				},
+				"C": {
+					Items: []*gcal.CalendarItem{
+						{
+							Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+							End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+						},
+					},
+				},
+			},
+			expected: nil,
+		},
+		{
+			desc: "cannot swap with yourself",
+			inSchedule: &pduty.Schedule{
+				Entries: []*pduty.ScheduleEntry{
+					{
+						User: &pduty.User{
+							ID: "A",
+						},
+						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+					},
+					{
+						User: &pduty.User{
+							ID: "A",
+						},
+						Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 03, 8, 0, 0, 0, time.UTC),
+					},
+				},
+			},
+			inConflict: &pduty.ScheduleEntry{
+				User: &pduty.User{
+					ID: "A",
+				},
+				Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+				End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+			},
+			inCalendars: map[string]*gcal.Calendar{
+				"A": {},
+			},
+			expected: nil,
 		},
 	}
 

@@ -8,7 +8,7 @@ import (
 // CheckerAPI will compare the schedule with the calendar and return any conflicts
 type CheckerAPI struct{}
 
-// Check is the main entrypoint for this struct
+// Check is the main entry point for this struct
 func (c *CheckerAPI) Check(schedule *pduty.Schedule, calendars map[string]*gcal.Calendar) (map[*pduty.ScheduleEntry]struct{}, error) {
 	out := map[*pduty.ScheduleEntry]struct{}{}
 
