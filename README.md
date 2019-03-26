@@ -5,6 +5,7 @@ Use Google Calendar "Out of office" events to detect PagerDuty schedule issues
 ## Setup
 
 * Go to https://console.developers.google.com/projectselector/apis/credentials (must be logged into your Company Google Account)
+* In the top left corner, click "Select a project" and choose "PagerDuty vs Google Calendar"
 * Click on "Create credentials" - OAuth client ID
 * Save the credentials in a file called `credentials.json` next to the binary (or the base of this repo if you are using `go run main.go`)
 
