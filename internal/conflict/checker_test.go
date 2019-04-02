@@ -14,6 +14,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 		desc              string
 		inSchedule        *pduty.Schedule
 		inCalendars       map[string]*gcal.Calendar
+		inMinimumDays     int64
 		expectedConflicts int
 		expectErr         bool
 	}{
@@ -25,7 +26,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 			expectErr:         false,
 		},
 		{
-			desc: "happy path - no conflict - ooo start and end before",
+			desc: "no conflict - ooo start and end before",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
 					{
@@ -51,7 +52,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 			expectErr:         false,
 		},
 		{
-			desc: "happy path - no conflict - ooo start and end after",
+			desc: "no conflict - ooo start and end after",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
 					{
@@ -77,7 +78,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 			expectErr:         false,
 		},
 		{
-			desc: "happy path - conflict - ooo start and end equal",
+			desc: "conflict - ooo start and end equal",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
 					{
@@ -103,7 +104,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 			expectErr:         false,
 		},
 		{
-			desc: "happy path - conflict - ooo start before and end after",
+			desc: "conflict - ooo start before and end after",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
 					{
@@ -129,7 +130,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 			expectErr:         false,
 		},
 		{
-			desc: "happy path - conflict - ooo start after and end before",
+			desc: "conflict - ooo start after and end before",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
 					{
@@ -154,6 +155,60 @@ func TestCheckerAPI_Check(t *testing.T) {
 			expectedConflicts: 1,
 			expectErr:         false,
 		},
+		{
+			desc: "conflict - minimum days between violation",
+			inSchedule: &pduty.Schedule{
+				Entries: []*pduty.ScheduleEntry{
+					{
+						User: &pduty.User{
+							ID: "FOO",
+						},
+						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+					},
+					{
+						User: &pduty.User{
+							ID: "FOO",
+						},
+						Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 03, 8, 0, 0, 0, time.UTC),
+					},
+				},
+			},
+			inCalendars: map[string]*gcal.Calendar{
+				"FOO": {},
+			},
+			inMinimumDays:     7,
+			expectedConflicts: 1,
+			expectErr:         false,
+		},
+		{
+			desc: "no conflict - minimum days between violation",
+			inSchedule: &pduty.Schedule{
+				Entries: []*pduty.ScheduleEntry{
+					{
+						User: &pduty.User{
+							ID: "FOO",
+						},
+						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+					},
+					{
+						User: &pduty.User{
+							ID: "FOO",
+						},
+						Start: time.Date(2019, 01, 10, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 10, 8, 0, 0, 0, time.UTC),
+					},
+				},
+			},
+			inCalendars: map[string]*gcal.Calendar{
+				"FOO": {},
+			},
+			inMinimumDays:     7,
+			expectedConflicts: 0,
+			expectErr:         false,
+		},
 	}
 
 	for _, s := range scenarios {
@@ -161,7 +216,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 		t.Run(scenario.desc, func(t *testing.T) {
 			// call
 			api := &CheckerAPI{}
-			result, resultErr := api.Check(scenario.inSchedule, scenario.inCalendars)
+			result, resultErr := api.Check(scenario.inSchedule, scenario.inCalendars, scenario.inMinimumDays)
 
 			// validate
 			assert.Equal(t, scenario.expectedConflicts, len(result), scenario.desc)

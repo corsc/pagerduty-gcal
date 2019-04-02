@@ -17,9 +17,10 @@ import (
 // 	 Using the "out of office" event type in the google calendar UI will achieve this.
 
 var (
-	scheduleID    string
-	startAsString string
-	days          int64
+	scheduleID        string
+	startAsString     string
+	days              int64
+	daysBetweenShifts int64
 )
 
 func main() {
@@ -31,6 +32,7 @@ func main() {
 	flag.StringVar(&scheduleID, "schedule", "", "schedule id (see README.md) for more info")
 	flag.StringVar(&startAsString, "start", "", "start of the schedule")
 	flag.Int64Var(&days, "days", 30, "days to add to start to define the schedule")
+	flag.Int64Var(&daysBetweenShifts, "between", 3, "minimum number of days between shifts")
 	flag.Parse()
 
 	start, err := time.Parse("2006-01-02", startAsString)
@@ -43,13 +45,14 @@ func main() {
 		panic("sorry you cannot re-write the past")
 	}
 
-	end := start.Add(time.Duration(days) * 24 * time.Hour)
+	end := start.Add(time.Duration(daysBetweenShifts) * 24 * time.Hour)
 	credentialsFile := "credentials.json"
 	tokenFile := "token.json"
 
 	// actual logic
 	fmt.Printf("Loading schedule for %s to %s\n", start.Format(time.RFC3339), end.Format(time.RFC3339))
-	schedule, err := (&pduty.ScheduleAPI{}).GetSchedule(apiKey, scheduleID, start, end)
+	scheduleStart := start.Add(time.Duration(-daysBetweenShifts * 24) * time.Hour)
+	schedule, err := (&pduty.ScheduleAPI{}).GetSchedule(apiKey, scheduleID, scheduleStart, end)
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +69,7 @@ func main() {
 		panic(err)
 	}
 
-	conflicts := checkForConflicts(schedule, calendars)
+	conflicts := checkForConflicts(schedule, calendars, daysBetweenShifts)
 	if len(conflicts) == 0 {
 		return
 	}
@@ -74,9 +77,9 @@ func main() {
 	_ = findSwaps(schedule, conflicts, calendars)
 }
 
-func checkForConflicts(schedule *pduty.Schedule, calendars map[string]*gcal.Calendar) map[*pduty.ScheduleEntry]struct{} {
+func checkForConflicts(schedule *pduty.Schedule, calendars map[string]*gcal.Calendar, daysBetweenShifts int64) map[*pduty.ScheduleEntry]struct{} {
 	fmt.Printf("Checking for conflicts\n")
-	conflicts, err := (&conflict.CheckerAPI{}).Check(schedule, calendars)
+	conflicts, err := (&conflict.CheckerAPI{}).Check(schedule, calendars, daysBetweenShifts)
 	if err != nil {
 		panic(err)
 	}
@@ -107,6 +110,8 @@ func findSwaps(schedule *pduty.Schedule, conflicts map[*pduty.ScheduleEntry]stru
 			swaps[conf] = swap
 			continue
 		}
+
+		fmt.Fprintf(os.Stderr, "\n ==> SWAP NOT FOUND FOR %s - %s - %s <==\n\n", conf.Start, conf.End, conf.User.Name)
 	}
 
 	return swaps
