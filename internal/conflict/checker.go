@@ -31,6 +31,10 @@ func (c *CheckerAPI) Check(schedule *pduty.Schedule, calendars map[string]*gcal.
 }
 
 func (c *CheckerAPI) checkForConflict(shift *pduty.ScheduleEntry, calendar *gcal.Calendar) bool {
+	if calendar == nil {
+		return false
+	}
+
 	for _, calendarEntry := range calendar.Items {
 		if calendarEntry.Start.Equal(shift.Start) {
 			return true

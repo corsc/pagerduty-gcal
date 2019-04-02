@@ -10,6 +10,8 @@ import (
 // SwapAPI will attempt to find a swap in the schedule
 type SwapAPI struct {
 	checker *CheckerAPI
+
+	proposedSwaps []*pduty.ScheduleEntry
 }
 
 // FindSwap attempts to find a swap for the supplied conflict
@@ -25,13 +27,22 @@ func (s *SwapAPI) FindSwap(schedule *pduty.Schedule, conflict *pduty.ScheduleEnt
 			continue
 		}
 
-		if s.timeEqual(potentialSwap.Start, conflict.Start) && s.timeEqual(potentialSwap.End, conflict.End) {
-			// check for conflicts
-			if !s.checker.checkForConflict(conflict, calendars[potentialSwap.User.ID]) {
-				return potentialSwap
-			}
+		if !s.timeEqual(potentialSwap.Start, conflict.Start) || !s.timeEqual(potentialSwap.End, conflict.End) {
+			continue
 		}
 
+		// check for conflicts
+		if s.checker.checkForConflict(conflict, calendars[potentialSwap.User.ID]) {
+			continue
+		}
+
+		// ensure we have not already included this user/slot in a previous swap
+		if s.isAlreadySwapped(potentialSwap) {
+			continue
+		}
+
+		s.proposedSwaps = append(s.proposedSwaps, potentialSwap)
+		return potentialSwap
 	}
 
 	return nil
@@ -40,4 +51,14 @@ func (s *SwapAPI) FindSwap(schedule *pduty.Schedule, conflict *pduty.ScheduleEnt
 // compare the hour and minute only
 func (s *SwapAPI) timeEqual(a time.Time, b time.Time) bool {
 	return a.Hour() == b.Hour() && a.Minute() == b.Minute()
+}
+
+func (s *SwapAPI) isAlreadySwapped(potentialSwap *pduty.ScheduleEntry) bool {
+	for _, thisSwap := range s.proposedSwaps {
+		if thisSwap.Start.Equal(potentialSwap.Start) && thisSwap.End.Equal(potentialSwap.End) {
+			return true
+		}
+	}
+
+	return false
 }

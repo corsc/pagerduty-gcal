@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 // UserAPI contains the functions to call the User API
@@ -32,7 +33,11 @@ func (u *UserAPI) getUserEmail(apiKey string, user *User) (string, error) {
 		return "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	httpClient := &http.Client{
+		Timeout: 3 * time.Second,
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}

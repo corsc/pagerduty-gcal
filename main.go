@@ -97,9 +97,10 @@ func checkForConflicts(schedule *pduty.Schedule, calendars map[string]*gcal.Cale
 
 func findSwaps(schedule *pduty.Schedule, conflicts map[*pduty.ScheduleEntry]struct{}, calendars map[string]*gcal.Calendar) map[*pduty.ScheduleEntry]*pduty.ScheduleEntry {
 	fmt.Printf("\nPotential Swaps (slot - user -> slot - user)\n")
+	swapAPI := &conflict.SwapAPI{}
 	swaps := map[*pduty.ScheduleEntry]*pduty.ScheduleEntry{}
 	for conf := range conflicts {
-		swap := (&conflict.SwapAPI{}).FindSwap(schedule, conf, calendars)
+		swap := swapAPI.FindSwap(schedule, conf, calendars)
 		if swap != nil {
 			fmt.Printf("%s - %s - %s", conf.Start, conf.End, conf.User.Name)
 			fmt.Printf(" -> %s - %s - %s\n", swap.Start, swap.End, swap.User.Name)

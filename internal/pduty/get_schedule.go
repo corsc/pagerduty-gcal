@@ -21,6 +21,10 @@ type ScheduleEntry struct {
 	User  *User
 }
 
+func (s *ScheduleEntry) String() string {
+	return fmt.Sprintf("User: %s - Start: %s - End: %s", s.User.Name, s.Start.Format(time.RFC3339), s.End.Format(time.RFC3339))
+}
+
 // Schedule is a response DTO
 type Schedule struct {
 	Name    string
@@ -37,7 +41,11 @@ func (s *ScheduleAPI) GetSchedule(apiKey string, scheduleID string, start time.T
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +53,10 @@ func (s *ScheduleAPI) GetSchedule(apiKey string, scheduleID string, start time.T
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
 
 	decoder := json.NewDecoder(resp.Body)
 
