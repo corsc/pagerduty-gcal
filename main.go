@@ -45,7 +45,7 @@ func main() {
 		panic("sorry you cannot re-write the past")
 	}
 
-	end := start.Add(time.Duration(daysBetweenShifts) * 24 * time.Hour)
+	end := start.Add(time.Duration(days) * 24 * time.Hour)
 	credentialsFile := "credentials.json"
 	tokenFile := "token.json"
 
