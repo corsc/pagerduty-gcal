@@ -11,6 +11,8 @@ import (
 
 
 var (
+	periodStart = time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC)
+
 	sourceUserID = "FOO"
 	destinationUserID = "BAR"
 
@@ -77,6 +79,21 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 				destinationUserID: {},
 			},
 			expected: day3MorningDestination,
+		},
+		{
+			desc: "swap not possible, in the past",
+			inSchedule: &pduty.Schedule{
+				Entries: []*pduty.ScheduleEntry{
+					day2MorningSource,
+					day3MorningDestination,
+				},
+			},
+			inConflict: day2MorningSource,
+			inCalendars: map[string]*gcal.Calendar{
+				sourceUserID: {},
+				destinationUserID: {},
+			},
+			expected: nil,
 		},
 		{
 			desc: "already swapped",
@@ -162,7 +179,7 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 			api := &SwapAPI{
 				proposedSwaps:scenario.inAlreadySwapped,
 			}
-			result := api.FindSwap(scenario.inSchedule, scenario.inConflict, scenario.inCalendars)
+			result := api.FindSwap(periodStart, scenario.inSchedule, scenario.inConflict, scenario.inCalendars)
 
 			// validate
 			assert.EqualValues(t, scenario.expected, result, scenario.desc)
