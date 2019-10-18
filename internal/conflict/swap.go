@@ -31,17 +31,23 @@ func (s *SwapAPI) FindSwap(schedule *pduty.Schedule, conflict *pduty.ScheduleEnt
 			continue
 		}
 
-		// check for conflicts
 		if s.checker.checkForConflict(conflict, calendars[potentialSwap.User.ID]) {
+			// potential swap user cannot take the conflict shift
 			continue
 		}
 
-		// ensure we have not already included this user/slot in a previous swap
+		if s.checker.checkForConflict(potentialSwap, calendars[conflict.User.ID]) {
+			// conflict user cannot take the potential swap's shift
+			continue
+		}
+
 		if s.isAlreadySwapped(potentialSwap) {
+			// ensure we have not already included this user/slot in a previous swap
 			continue
 		}
 
 		s.proposedSwaps = append(s.proposedSwaps, potentialSwap)
+
 		return potentialSwap
 	}
 

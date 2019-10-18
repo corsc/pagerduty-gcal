@@ -9,39 +9,52 @@ import (
 	"github.com/corsc/pagerduty-gcal/internal/pduty"
 )
 
+
+var (
+	sourceUserID = "FOO"
+	destinationUserID = "BAR"
+
+	day2Morning= time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC)
+	day2Afternoon = time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC)
+	day2Evening = time.Date(2019, 01, 02, 16, 0, 0, 0, time.UTC)
+
+	day3Morning = day2Morning.Add(24 * time.Hour)
+	day3Afternoon = day2Afternoon.Add(24 * time.Hour)
+
+	day2MorningSource = &pduty.ScheduleEntry{
+		User: &pduty.User{
+			ID: sourceUserID,
+		},
+		Start: day2Morning,
+		End:   day2Afternoon,
+	}
+
+	day2AfternoonDestination = &pduty.ScheduleEntry{
+		User: &pduty.User{
+			ID: sourceUserID,
+		},
+		Start: day2Afternoon,
+		End:   day2Evening,
+	}
+
+	day3MorningDestination = &pduty.ScheduleEntry{
+		User: &pduty.User{
+			ID: destinationUserID,
+		},
+		Start: day3Morning,
+		End:   day3Afternoon,
+	}
+
+	day4MorningUserFoo = &pduty.ScheduleEntry{
+		User: &pduty.User{
+			ID: sourceUserID,
+		},
+		Start: day2Morning,
+		End:   day2Afternoon,
+	}
+)
+
 func TestSwapAPI_FindSwap(t *testing.T) {
-	day2morningUserFoo := &pduty.ScheduleEntry{
-		User: &pduty.User{
-			ID: "FOO",
-		},
-		Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
-		End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
-	}
-
-	day2afternoonUserFoo := &pduty.ScheduleEntry{
-		User: &pduty.User{
-			ID: "FOO",
-		},
-		Start: time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
-		End:   time.Date(2019, 01, 02, 16, 0, 0, 0, time.UTC),
-	}
-
-	day3MorningUserBar := &pduty.ScheduleEntry{
-		User: &pduty.User{
-			ID: "BAR",
-		},
-		Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
-		End:   time.Date(2019, 01, 03, 8, 0, 0, 0, time.UTC),
-	}
-
-	day4morningUserFoo := &pduty.ScheduleEntry{
-		User: &pduty.User{
-			ID: "FOO",
-		},
-		Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
-		End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
-	}
-
 	scenarios := []struct {
 		desc             string
 		inSchedule       *pduty.Schedule
@@ -54,60 +67,76 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 			desc: "swap available",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
-					day2morningUserFoo,
-					day3MorningUserBar,
+					day2MorningSource,
+					day3MorningDestination,
 				},
 			},
-			inConflict: day2morningUserFoo,
+			inConflict: day2MorningSource,
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {},
-				"BAR": {},
+				sourceUserID: {},
+				destinationUserID: {},
 			},
-			expected: day3MorningUserBar,
+			expected: day3MorningDestination,
 		},
 		{
 			desc: "already swapped",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
-					day2morningUserFoo,
-					day3MorningUserBar,
+					day2MorningSource,
+					day3MorningDestination,
 				},
 			},
-			inConflict: day2morningUserFoo,
+			inConflict: day2MorningSource,
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {},
-				"BAR": {},
+				sourceUserID: {},
+				destinationUserID: {},
 			},
 			inAlreadySwapped: []*pduty.ScheduleEntry{
-				day3MorningUserBar,
+				day3MorningDestination,
 			},
 			expected: nil,
 		},
 		{
-			desc: "no swaps possible",
+			desc: "swap not possible because destination is not available",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
-					day2morningUserFoo, day2afternoonUserFoo,
+					day2MorningSource,
+					day3MorningDestination,
 				},
 			},
-			inConflict: day2morningUserFoo,
+			inConflict: day2MorningSource,
 			inCalendars: map[string]*gcal.Calendar{
-				"FU": {
+				sourceUserID: {},
+				destinationUserID: {
 					Items: []*gcal.CalendarItem{
 						{
-							Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
-							End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+							Start: day2Morning,
+							End:   day2Afternoon,
 						},
 					},
 				},
-				"BAR": {
+			},
+			expected: nil,
+		},
+		{
+			desc: "swap not possible because original user cannot take the replacement's shift",
+			inSchedule: &pduty.Schedule{
+				Entries: []*pduty.ScheduleEntry{
+					day2MorningSource,
+					day3MorningDestination,
+				},
+			},
+			inConflict: day2MorningSource,
+			inCalendars: map[string]*gcal.Calendar{
+				sourceUserID: {
 					Items: []*gcal.CalendarItem{
 						{
-							Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
-							End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+							Start: day3Morning,
+							End:   day3Afternoon,
 						},
 					},
 				},
+				destinationUserID: {},
 			},
 			expected: nil,
 		},
@@ -115,12 +144,12 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 			desc: "cannot swap with yourself",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
-					day2morningUserFoo, day4morningUserFoo,
+					day2MorningSource, day4MorningUserFoo,
 				},
 			},
-			inConflict: day2morningUserFoo,
+			inConflict: day2MorningSource,
 			inCalendars: map[string]*gcal.Calendar{
-				"FU": {},
+				sourceUserID: {},
 			},
 			expected: nil,
 		},
