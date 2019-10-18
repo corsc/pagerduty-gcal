@@ -15,7 +15,7 @@ type SwapAPI struct {
 }
 
 // FindSwap attempts to find a swap for the supplied conflict
-func (s *SwapAPI) FindSwap(schedule *pduty.Schedule, conflict *pduty.ScheduleEntry, calendars map[string]*gcal.Calendar) *pduty.ScheduleEntry {
+func (s *SwapAPI) FindSwap(periodStart time.Time, schedule *pduty.Schedule, conflict *pduty.ScheduleEntry, calendars map[string]*gcal.Calendar) *pduty.ScheduleEntry {
 	if s.checker == nil {
 		s.checker = &CheckerAPI{}
 	}
@@ -24,6 +24,11 @@ func (s *SwapAPI) FindSwap(schedule *pduty.Schedule, conflict *pduty.ScheduleEnt
 		if potentialSwap.Start.Equal(conflict.Start) && potentialSwap.End.Equal(conflict.End) ||
 			potentialSwap.User.ID == conflict.User.ID {
 			// cant swap with the same slot or same user
+			continue
+		}
+
+		if potentialSwap.Start.Before(periodStart) {
+			// cant swap with slots in the prior to start of the schedule period
 			continue
 		}
 
