@@ -51,7 +51,7 @@ func main() {
 
 	// actual logic
 	fmt.Printf("Loading schedule for %s to %s\n", start.Format(time.RFC3339), end.Format(time.RFC3339))
-	scheduleStart := start.Add(time.Duration(-daysBetweenShifts * 24) * time.Hour)
+	scheduleStart := start.Add(time.Duration(-daysBetweenShifts*24) * time.Hour)
 	schedule, err := (&pduty.ScheduleAPI{}).GetSchedule(apiKey, scheduleID, scheduleStart, end)
 	if err != nil {
 		panic(err)
@@ -69,49 +69,50 @@ func main() {
 		panic(err)
 	}
 
-	conflicts := checkForConflicts(schedule, calendars, daysBetweenShifts)
-	if len(conflicts) == 0 {
+	conflictsOrdered := checkForConflicts(schedule, calendars, daysBetweenShifts)
+	if len(conflictsOrdered) == 0 {
 		return
 	}
 
-	_ = findSwaps(schedule, conflicts, calendars)
+	_ = findSwaps(schedule, conflictsOrdered, calendars)
 }
 
-func checkForConflicts(schedule *pduty.Schedule, calendars map[string]*gcal.Calendar, daysBetweenShifts int64) map[*pduty.ScheduleEntry]struct{} {
+func checkForConflicts(schedule *pduty.Schedule, calendars map[string]*gcal.Calendar, daysBetweenShifts int64) []*pduty.ScheduleEntry {
 	fmt.Printf("Checking for conflicts\n")
-	conflicts, err := (&conflict.CheckerAPI{}).Check(schedule, calendars, daysBetweenShifts)
+	conflictsOrdered, err := (&conflict.CheckerAPI{}).Check(schedule, calendars, daysBetweenShifts)
 	if err != nil {
 		panic(err)
 	}
 
 	// output result
-	if len(conflicts) == 0 {
+	if len(conflictsOrdered) == 0 {
 		log.Printf("No conflicts found")
 		return nil
 	}
 
 	fmt.Printf("Conflict (slot : user)\n")
-	for scheduleEntry := range conflicts {
+	for _, scheduleEntry := range conflictsOrdered {
 		fmt.Printf("%s to %s : %s\n", scheduleEntry.Start, scheduleEntry.End, scheduleEntry.User.Name)
 	}
 
-	return conflicts
+	return conflictsOrdered
 }
 
-func findSwaps(schedule *pduty.Schedule, conflicts map[*pduty.ScheduleEntry]struct{}, calendars map[string]*gcal.Calendar) map[*pduty.ScheduleEntry]*pduty.ScheduleEntry {
+func findSwaps(schedule *pduty.Schedule, conflictsOrdered []*pduty.ScheduleEntry, calendars map[string]*gcal.Calendar) map[*pduty.ScheduleEntry]*pduty.ScheduleEntry {
 	fmt.Printf("\nPotential Swaps (slot - user -> slot - user)\n")
 	swapAPI := &conflict.SwapAPI{}
 	swaps := map[*pduty.ScheduleEntry]*pduty.ScheduleEntry{}
-	for conf := range conflicts {
-		swap := swapAPI.FindSwap(schedule, conf, calendars)
+
+	for _, conflict := range conflictsOrdered {
+		swap := swapAPI.FindSwap(schedule, conflict, calendars)
 		if swap != nil {
-			fmt.Printf("%s - %s - %s", conf.Start, conf.End, conf.User.Name)
+			fmt.Printf("%s - %s - %s", conflict.Start, conflict.End, conflict.User.Name)
 			fmt.Printf(" -> %s - %s - %s\n", swap.Start, swap.End, swap.User.Name)
-			swaps[conf] = swap
+			swaps[conflict] = swap
 			continue
 		}
 
-		fmt.Fprintf(os.Stderr, "\n ==> SWAP NOT FOUND FOR %s - %s - %s <==\n\n", conf.Start, conf.End, conf.User.Name)
+		fmt.Fprintf(os.Stderr, "\n ==> SWAP NOT FOUND FOR %s - %s - %s <==\n\n", conflict.Start, conflict.End, conflict.User.Name)
 	}
 
 	return swaps
