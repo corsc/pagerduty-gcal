@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	testUserFoo = "FOO"
+	testUserBar = "BAR"
+)
+
 func TestCheckerAPI_Check(t *testing.T) {
 	scenarios := []struct {
 		desc              string
@@ -31,7 +36,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				Entries: []*pduty.ScheduleEntry{
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
@@ -39,7 +44,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				},
 			},
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {
+				testUserFoo: {
 					Items: []*gcal.CalendarItem{
 						{
 							Start: time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC),
@@ -57,7 +62,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				Entries: []*pduty.ScheduleEntry{
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
@@ -65,7 +70,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				},
 			},
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {
+				testUserFoo: {
 					Items: []*gcal.CalendarItem{
 						{
 							Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
@@ -83,7 +88,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				Entries: []*pduty.ScheduleEntry{
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
@@ -91,7 +96,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				},
 			},
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {
+				testUserFoo: {
 					Items: []*gcal.CalendarItem{
 						{
 							Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
@@ -109,7 +114,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				Entries: []*pduty.ScheduleEntry{
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
@@ -117,7 +122,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				},
 			},
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {
+				testUserFoo: {
 					Items: []*gcal.CalendarItem{
 						{
 							Start: time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC),
@@ -135,7 +140,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				Entries: []*pduty.ScheduleEntry{
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
@@ -143,7 +148,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				},
 			},
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {
+				testUserFoo: {
 					Items: []*gcal.CalendarItem{
 						{
 							Start: time.Date(2019, 01, 02, 1, 0, 0, 0, time.UTC),
@@ -161,14 +166,14 @@ func TestCheckerAPI_Check(t *testing.T) {
 				Entries: []*pduty.ScheduleEntry{
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
 					},
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 03, 8, 0, 0, 0, time.UTC),
@@ -176,7 +181,7 @@ func TestCheckerAPI_Check(t *testing.T) {
 				},
 			},
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {},
+				testUserFoo: {},
 			},
 			inMinimumDays:     7,
 			expectedConflicts: 1,
@@ -188,14 +193,14 @@ func TestCheckerAPI_Check(t *testing.T) {
 				Entries: []*pduty.ScheduleEntry{
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
 					},
 					{
 						User: &pduty.User{
-							ID: "FOO",
+							ID: testUserFoo,
 						},
 						Start: time.Date(2019, 01, 10, 0, 0, 0, 0, time.UTC),
 						End:   time.Date(2019, 01, 10, 8, 0, 0, 0, time.UTC),
@@ -203,7 +208,34 @@ func TestCheckerAPI_Check(t *testing.T) {
 				},
 			},
 			inCalendars: map[string]*gcal.Calendar{
-				"FOO": {},
+				testUserFoo: {},
+			},
+			inMinimumDays:     7,
+			expectedConflicts: 0,
+			expectErr:         false,
+		},
+		{
+			desc: "no conflict - minimum days between violation (different user)",
+			inSchedule: &pduty.Schedule{
+				Entries: []*pduty.ScheduleEntry{
+					{
+						User: &pduty.User{
+							ID: testUserBar,
+						},
+						Start: time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC),
+					},
+					{
+						User: &pduty.User{
+							ID: testUserFoo,
+						},
+						Start: time.Date(2019, 01, 03, 0, 0, 0, 0, time.UTC),
+						End:   time.Date(2019, 01, 03, 8, 0, 0, 0, time.UTC),
+					},
+				},
+			},
+			inCalendars: map[string]*gcal.Calendar{
+				testUserFoo: {},
 			},
 			inMinimumDays:     7,
 			expectedConflicts: 0,

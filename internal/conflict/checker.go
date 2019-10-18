@@ -68,8 +68,13 @@ func (c *CheckerAPI) checkForConflict(shift *pduty.ScheduleEntry, calendar *gcal
 func (c *CheckerAPI) checkMinimumDays(schedule *pduty.Schedule, currentEntry *pduty.ScheduleEntry, daysBetweenShifts int64) bool {
 	for _, previousEntry := range schedule.Entries {
 		if previousEntry.Start.After(currentEntry.Start) || previousEntry == currentEntry {
-			// don't look at this future
+			// don't look at the future or the same entry
 			return false
+		}
+
+		if currentEntry.User.ID != previousEntry.User.ID {
+			// don't compare different users
+			continue
 		}
 
 		if currentEntry.Start.Before(previousEntry.Start.Add(time.Duration(daysBetweenShifts * 24) * time.Hour)) {
