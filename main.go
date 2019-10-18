@@ -16,6 +16,10 @@ import (
 // * For this tool to work it requires a public calendar event with the word "out" in the title.
 // 	 Using the "out of office" event type in the google calendar UI will achieve this.
 
+const (
+	timeFormat = "2006-01-02 15:04"
+)
+
 var (
 	scheduleID        string
 	startAsString     string
@@ -37,12 +41,15 @@ func main() {
 
 	start, err := time.Parse("2006-01-02", startAsString)
 	if err != nil {
-		panic("failed to parse start with err: %s" + err.Error())
+		fmt.Printf("failed to parse start with err: %s\n" , err)
+		flag.PrintDefaults()
+		return
 	}
 
 	now := time.Now()
 	if start.Before(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)) {
-		panic("sorry you cannot re-write the past")
+		fmt.Print("sorry you cannot re-write the past\n")
+		return
 	}
 
 	end := start.Add(time.Duration(days) * 24 * time.Hour)
@@ -54,19 +61,21 @@ func main() {
 	scheduleStart := start.Add(time.Duration(-daysBetweenShifts*24) * time.Hour)
 	schedule, err := (&pduty.ScheduleAPI{}).GetSchedule(apiKey, scheduleID, scheduleStart, end)
 	if err != nil {
-		panic(err)
+		fmt.Print(err)
+		return
 	}
 
 	fmt.Printf("Loading scheduled user details\n")
 	participants, err := (&pduty.UserAPI{}).GetUsers(apiKey, schedule.Entries)
 	if err != nil {
-		panic(err)
+		fmt.Print(err)
 	}
 
 	fmt.Printf("Loading calendars for scheduled users\n")
 	calendars, err := (&gcal.CalendarAPI{}).GetCalendars(credentialsFile, tokenFile, participants, start, end)
 	if err != nil {
-		panic(err)
+		fmt.Print(err)
+		return
 	}
 
 	conflictsOrdered := checkForConflicts(schedule, calendars, daysBetweenShifts)
@@ -92,7 +101,7 @@ func checkForConflicts(schedule *pduty.Schedule, calendars map[string]*gcal.Cale
 
 	fmt.Printf("Conflict (slot : user)\n")
 	for _, scheduleEntry := range conflictsOrdered {
-		fmt.Printf("%s to %s : %s\n", scheduleEntry.Start, scheduleEntry.End, scheduleEntry.User.Name)
+		fmt.Printf("%s to %s : %s\n", scheduleEntry.Start.Format(timeFormat), scheduleEntry.End.Format(timeFormat), scheduleEntry.User.Name)
 	}
 
 	return conflictsOrdered
@@ -106,13 +115,13 @@ func findSwaps(schedule *pduty.Schedule, conflictsOrdered []*pduty.ScheduleEntry
 	for _, conflict := range conflictsOrdered {
 		swap := swapAPI.FindSwap(schedule, conflict, calendars)
 		if swap != nil {
-			fmt.Printf("%s - %s - %s", conflict.Start, conflict.End, conflict.User.Name)
-			fmt.Printf(" -> %s - %s - %s\n", swap.Start, swap.End, swap.User.Name)
+			fmt.Printf("%s - %s - %s", conflict.Start.Format(timeFormat), conflict.End.Format(timeFormat), conflict.User.Name)
+			fmt.Printf(" -> %s - %s - %s\n", swap.Start.Format(timeFormat), swap.End.Format(timeFormat), swap.User.Name)
 			swaps[conflict] = swap
 			continue
 		}
 
-		fmt.Fprintf(os.Stderr, "\n ==> SWAP NOT FOUND FOR %s - %s - %s <==\n\n", conflict.Start, conflict.End, conflict.User.Name)
+		fmt.Fprintf(os.Stderr, "\n ==> SWAP NOT FOUND FOR %s - %s - %s <==\n\n", conflict.Start.Format(timeFormat), conflict.End.Format(timeFormat), conflict.User.Name)
 	}
 
 	return swaps
