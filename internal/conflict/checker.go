@@ -10,8 +10,8 @@ import (
 type CheckerAPI struct{}
 
 // Check is the main entry point for this struct
-func (c *CheckerAPI) Check(schedule *pduty.Schedule, calendars map[string]*gcal.Calendar, daysBetweenShifts int64) (map[*pduty.ScheduleEntry]struct{}, error) {
-	out := map[*pduty.ScheduleEntry]struct{}{}
+func (c *CheckerAPI) Check(schedule *pduty.Schedule, calendars map[string]*gcal.Calendar, daysBetweenShifts int64) ([]*pduty.ScheduleEntry, error) {
+	var conflictsOrdered []*pduty.ScheduleEntry
 
 	for _, scheduleEntry := range schedule.Entries {
 		scheduleUserID := scheduleEntry.User.ID
@@ -19,7 +19,7 @@ func (c *CheckerAPI) Check(schedule *pduty.Schedule, calendars map[string]*gcal.
 		// check schedule for "minimum days between shifts" violations
 		conflict := c.checkMinimumDays(schedule, scheduleEntry, daysBetweenShifts)
 		if conflict {
-			out[scheduleEntry] = struct{}{}
+			conflictsOrdered = append(conflictsOrdered, scheduleEntry)
 			continue
 		}
 
@@ -32,12 +32,12 @@ func (c *CheckerAPI) Check(schedule *pduty.Schedule, calendars map[string]*gcal.
 
 		conflict = c.checkForConflict(scheduleEntry, calendar)
 		if conflict {
-			out[scheduleEntry] = struct{}{}
+			conflictsOrdered = append(conflictsOrdered, scheduleEntry)
 			continue
 		}
 	}
 
-	return out, nil
+	return conflictsOrdered, nil
 }
 
 func (c *CheckerAPI) checkForConflict(shift *pduty.ScheduleEntry, calendar *gcal.Calendar) bool {
@@ -67,7 +67,7 @@ func (c *CheckerAPI) checkForConflict(shift *pduty.ScheduleEntry, calendar *gcal
 
 func (c *CheckerAPI) checkMinimumDays(schedule *pduty.Schedule, currentEntry *pduty.ScheduleEntry, daysBetweenShifts int64) bool {
 	for _, previousEntry := range schedule.Entries {
-		if previousEntry.Start.After(currentEntry.Start) || previousEntry== currentEntry {
+		if previousEntry.Start.After(currentEntry.Start) || previousEntry == currentEntry {
 			// don't look at this future
 			return false
 		}
