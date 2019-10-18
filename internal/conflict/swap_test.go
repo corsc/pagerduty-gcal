@@ -1,26 +1,28 @@
 package conflict
 
 import (
-	"github.com/corsc/pagerduty-gcal/internal/gcal"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
+	"github.com/corsc/pagerduty-gcal/internal/gcal"
 	"github.com/corsc/pagerduty-gcal/internal/pduty"
+	"github.com/stretchr/testify/assert"
 )
-
 
 var (
 	periodStart = time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC)
 
-	sourceUserID = "FOO"
+	sourceUserID      = "FOO"
 	destinationUserID = "BAR"
 
-	day2Morning= time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC)
-	day2Afternoon = time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC)
-	day2Evening = time.Date(2019, 01, 02, 16, 0, 0, 0, time.UTC)
+	dayPastMorning   = time.Date(2018, 12, 30, 0, 0, 0, 0, time.UTC)
+	dayPastAfternoon = time.Date(2018, 12, 30, 8, 0, 0, 0, time.UTC)
 
-	day3Morning = day2Morning.Add(24 * time.Hour)
+	day2Morning   = time.Date(2019, 01, 02, 0, 0, 0, 0, time.UTC)
+	day2Afternoon = time.Date(2019, 01, 02, 8, 0, 0, 0, time.UTC)
+	day2Evening   = time.Date(2019, 01, 02, 16, 0, 0, 0, time.UTC)
+
+	day3Morning   = day2Morning.Add(24 * time.Hour)
 	day3Afternoon = day2Afternoon.Add(24 * time.Hour)
 
 	day2MorningSource = &pduty.ScheduleEntry{
@@ -47,12 +49,12 @@ var (
 		End:   day3Afternoon,
 	}
 
-	day4MorningUserFoo = &pduty.ScheduleEntry{
+	dayPastMorningDestination = &pduty.ScheduleEntry{
 		User: &pduty.User{
-			ID: sourceUserID,
+			ID: destinationUserID,
 		},
-		Start: day2Morning,
-		End:   day2Afternoon,
+		Start: dayPastMorning,
+		End:   dayPastAfternoon,
 	}
 )
 
@@ -75,7 +77,7 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 			},
 			inConflict: day2MorningSource,
 			inCalendars: map[string]*gcal.Calendar{
-				sourceUserID: {},
+				sourceUserID:      {},
 				destinationUserID: {},
 			},
 			expected: day3MorningDestination,
@@ -85,12 +87,12 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
 					day2MorningSource,
-					day3MorningDestination,
+					dayPastMorningDestination,
 				},
 			},
 			inConflict: day2MorningSource,
 			inCalendars: map[string]*gcal.Calendar{
-				sourceUserID: {},
+				sourceUserID:      {},
 				destinationUserID: {},
 			},
 			expected: nil,
@@ -105,7 +107,7 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 			},
 			inConflict: day2MorningSource,
 			inCalendars: map[string]*gcal.Calendar{
-				sourceUserID: {},
+				sourceUserID:      {},
 				destinationUserID: {},
 			},
 			inAlreadySwapped: []*pduty.ScheduleEntry{
@@ -161,7 +163,7 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 			desc: "cannot swap with yourself",
 			inSchedule: &pduty.Schedule{
 				Entries: []*pduty.ScheduleEntry{
-					day2MorningSource, day4MorningUserFoo,
+					day2MorningSource, day2MorningSource,
 				},
 			},
 			inConflict: day2MorningSource,
@@ -177,7 +179,7 @@ func TestSwapAPI_FindSwap(t *testing.T) {
 		t.Run(scenario.desc, func(t *testing.T) {
 			// call
 			api := &SwapAPI{
-				proposedSwaps:scenario.inAlreadySwapped,
+				proposedSwaps: scenario.inAlreadySwapped,
 			}
 			result := api.FindSwap(periodStart, scenario.inSchedule, scenario.inConflict, scenario.inCalendars)
 

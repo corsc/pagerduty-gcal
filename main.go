@@ -41,7 +41,7 @@ func main() {
 
 	periodStart, err := time.Parse("2006-01-02", startAsString)
 	if err != nil {
-		fmt.Printf("failed to parse start with err: %s\n" , err)
+		fmt.Printf("failed to parse start with err: %s\n", err)
 		flag.PrintDefaults()
 		return
 	}
@@ -58,7 +58,7 @@ func main() {
 
 	// actual logic
 	fmt.Printf("Loading schedule for %s to %s\n", periodStart.Format(timeFormat), end.Format(timeFormat))
-	scheduleStart := periodStart.Add(time.Duration(-daysBetweenShifts * 24) * time.Hour)
+	scheduleStart := periodStart.Add(time.Duration(-daysBetweenShifts*24) * time.Hour)
 	schedule, err := (&pduty.ScheduleAPI{}).GetSchedule(apiKey, scheduleID, scheduleStart, end)
 	if err != nil {
 		fmt.Print(err)

@@ -1,9 +1,10 @@
 package conflict
 
 import (
+	"time"
+
 	"github.com/corsc/pagerduty-gcal/internal/gcal"
 	"github.com/corsc/pagerduty-gcal/internal/pduty"
-	"time"
 )
 
 // CheckerAPI will compare the schedule with the calendar and return any conflicts
@@ -77,7 +78,7 @@ func (c *CheckerAPI) checkMinimumDays(schedule *pduty.Schedule, currentEntry *pd
 			continue
 		}
 
-		if currentEntry.Start.Before(previousEntry.Start.Add(time.Duration(daysBetweenShifts * 24) * time.Hour)) {
+		if currentEntry.Start.Before(previousEntry.Start.Add(time.Duration(daysBetweenShifts*24) * time.Hour)) {
 			return true
 		}
 	}
